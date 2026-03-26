@@ -1,0 +1,25 @@
+node_modules
+dist
+dist-ssr
+*.local
+*.log
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# Tauri
+src-tauri/target
+src-tauri/gen/schemas
+
+# Local config
+.gemini
+.env*
+
