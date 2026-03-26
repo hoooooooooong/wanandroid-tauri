@@ -14,74 +14,80 @@
     </div>
 
     <!-- 内容区 -->
-    <div class="p-4">
-      <!-- 顶部：标签 -->
-      <div class="flex items-center flex-wrap gap-2 mb-2">
-        <span
-          v-if="article.fresh"
-          class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full"
-        >
-          新
-        </span>
-        <span
-          v-if="article.top"
-          class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-orange-400 to-red-500 text-white rounded-full"
-        >
-          置顶
-        </span>
-        <span
-          v-for="tag in article.tags"
-          :key="tag.name"
-          class="tag-item px-2 py-0.5 text-xs rounded"
-          :style="getTagStyle(tag.name)"
-        >
-          {{ tag.name }}
-        </span>
+    <div class="p-5">
+      <!-- 顶部：分类和状态 -->
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span
+            v-if="article.fresh"
+            class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500 text-white rounded-md uppercase tracking-wider"
+          >
+            新
+          </span>
+          <span
+            v-if="article.top"
+            class="px-2 py-0.5 text-[10px] font-bold bg-rose-500 text-white rounded-md uppercase tracking-wider"
+          >
+            置顶
+          </span>
+          <span
+            class="text-[10px] font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md uppercase tracking-wider"
+          >
+            {{ article.superChapterName || '未分类' }}
+          </span>
+        </div>
+        <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">{{ article.niceDate }}</span>
       </div>
 
       <!-- 标题 -->
       <h3
-        class="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-3 line-clamp-2 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+        class="text-base font-bold text-slate-800 dark:text-slate-100 leading-6 mb-4 line-clamp-2 group-hover:text-blue-500 transition-colors"
         v-html="article.title"
       ></h3>
 
-      <!-- 底部信息 -->
-      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-        <div class="flex items-center gap-2">
-          <div class="flex items-center gap-2">
-            <div
-              class="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-medium"
-              :style="getAvatarStyle(authorName)"
-            >
-              {{ authorName.charAt(0).toUpperCase() }}
-            </div>
-            <span class="max-w-[80px] truncate">{{ authorName }}</span>
-          </div>
-          <span
-            v-if="article.superChapterName"
-            class="tag-item px-2 py-0.5 text-xs rounded"
-            :style="getTagStyle(article.superChapterName)"
+      <!-- 标签展示 -->
+      <div v-if="article.tags && article.tags.length > 0" class="flex flex-wrap gap-2 mb-4">
+        <span
+          v-for="tag in article.tags"
+          :key="tag.name"
+          class="px-2 py-0.5 text-[10px] font-semibold bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-600/50 rounded-md"
+        >
+          #{{ tag.name }}
+        </span>
+      </div>
+
+      <!-- 底部作者信息 -->
+      <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-50 dark:border-slate-700/50">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
+            :style="getAvatarStyle(authorName)"
           >
-            {{ article.superChapterName }}
-          </span>
+            {{ authorName.charAt(0).toUpperCase() }}
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[100px]">{{ authorName }}</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-500">{{ article.chapterName }}</span>
+          </div>
         </div>
 
-        <!-- 时间和收藏 -->
-        <div class="flex items-center gap-2">
-          <span class="text-slate-400 dark:text-slate-500">{{ article.niceDate }}</span>
-          <button
-            @click.stop="handleCollect"
-            class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            :title="article.collect ? '取消收藏' : '收藏文章'"
-          >
-            <i
-              :class="[
-                'fa-heart transition-colors',
-                article.collect ? 'fa-solid text-red-500' : 'fa-regular text-slate-400 hover:text-red-400'
-              ]"
-            ></i>
-          </button>
-        </div>
+        <button
+          @click.stop="handleCollect"
+          class="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300"
+          :class="[
+            article.collect
+              ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-500'
+              : 'bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-rose-50'
+          ]"
+          :title="article.collect ? '取消收藏' : '收藏文章'"
+        >
+          <i
+            :class="[
+              'transition-transform duration-300',
+              article.collect ? 'fa-solid fa-heart scale-110' : 'fa-regular fa-heart'
+            ]"
+          ></i>
+        </button>
       </div>
     </div>
   </div>

@@ -1,167 +1,160 @@
 <template>
-  <div class="fade-in relative">
-    <!-- 标题 -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-        <i class="fa-solid fa-folder-open text-blue-500"></i>
-        项目分类
-      </h2>
-      <span class="text-sm text-slate-400">{{ projects.length }} 个项目</span>
+  <div class="projects-wrapper fade-in pb-12">
+    <!-- 头部：标题与介绍 -->
+    <div class="mb-10 px-1">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-sm">
+          <i class="fa-solid fa-folder-tree"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">项目分类</h2>
+      </div>
+      <p class="text-sm text-slate-400 ml-13 font-medium">发现优质开源项目，探索 Android 开发新高度</p>
     </div>
 
-    <!-- 分类标签 -->
-    <div class="mb-6 overflow-x-auto pb-2">
-      <div v-if="loadingCategories" class="flex gap-2">
-        <div v-for="i in 6" :key="i" class="px-5 py-2 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse w-20 h-9 flex-shrink-0"></div>
+    <!-- 分类标签：支持拖拽 + 左右按钮 -->
+    <div class="mb-8 sticky top-0 z-20 -mx-2 px-2 py-2 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md group/nav">
+      <!-- 左切换按钮 -->
+      <button 
+        v-if="showLeftBtn"
+        @click="scrollBy(-200)"
+        class="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-700/90 shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 z-30 opacity-0 group-hover/nav:opacity-100 transition-all hover:bg-blue-500 hover:text-white"
+      >
+        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+      </button>
+
+      <!-- 滚动容器 -->
+      <div 
+        ref="scrollContainer"
+        class="flex gap-2 overflow-x-auto no-scrollbar pb-1 cursor-grab active:cursor-grabbing select-none scroll-smooth"
+        @mousedown="startDragging"
+        @mousemove="onDragging"
+        @mouseup="stopDragging"
+        @mouseleave="stopDragging"
+        @scroll="updateBtnState"
+      >
+        <div v-if="loadingCategories" class="flex gap-2">
+          <div v-for="i in 8" :key="i" class="h-10 w-24 bg-white dark:bg-slate-700 rounded-2xl animate-pulse"></div>
+        </div>
+        <template v-else>
+          <button
+            v-for="category in categories"
+            :key="category.id"
+            @click="onCategoryClick(category)"
+            :class="[
+              'px-6 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 whitespace-nowrap flex-shrink-0 border',
+              currentCategoryId === category.id
+                ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/20 scale-105'
+                : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700 hover:border-blue-300 hover:text-blue-500 shadow-sm'
+            ]"
+          >
+            {{ category.name }}
+          </button>
+        </template>
       </div>
-      <div v-else class="flex gap-2 flex-wrap">
-        <button
-          v-for="category in categories"
-          :key="category.id"
-          :class="[
-            'px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 flex-shrink-0',
-            currentCategoryId === category.id
-              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-500'
-          ]"
-          @click="selectCategory(category.id)"
-        >
-          {{ category.name }}
-        </button>
-      </div>
+
+      <!-- 右切换按钮 -->
+      <button 
+        v-if="showRightBtn"
+        @click="scrollBy(200)"
+        class="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-700/90 shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 z-30 opacity-0 group-hover/nav:opacity-100 transition-all hover:bg-blue-500 hover:text-white"
+      >
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
     </div>
 
     <!-- 当前分类标题 -->
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-        <i class="fa-solid fa-boxes-stacked text-emerald-500"></i>
+    <div class="flex items-center justify-between mb-6 px-1">
+      <h3 class="text-lg font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+        <span class="w-1.5 h-5 bg-blue-500 rounded-full"></span>
         {{ currentCategoryName }}
-      </h2>
-      <span class="text-xs text-slate-400">{{ projects.length }} 个项目</span>
+      </h3>
+      <span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        {{ projects.length }} Items
+      </span>
     </div>
 
     <!-- 骨架屏 -->
-    <div v-if="loading && projects.length === 0" class="grid grid-cols-2 gap-5">
-      <div
-        v-for="i in 4"
-        :key="i"
-        class="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden animate-pulse"
-      >
-        <div class="h-40 bg-slate-200 dark:bg-slate-700"></div>
-        <div class="p-4 space-y-3">
-          <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-          <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded"></div>
-          <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
-        </div>
-      </div>
+    <div v-if="loading && projects.length === 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-for="i in 4" :key="i" class="h-80 bg-white dark:bg-slate-800 rounded-2xl animate-pulse"></div>
     </div>
 
-    <!-- 项目卡片 -->
-    <div v-else class="grid grid-cols-2 gap-5">
+    <!-- 项目卡片网格 -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div
         v-for="project in projects"
         :key="project.id"
-        class="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-xl transition-all duration-300 cursor-pointer"
+        class="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-500 cursor-pointer flex flex-col"
         @click="openProject(project)"
       >
         <!-- 封面图 -->
-        <div class="relative h-40 overflow-hidden">
+        <div class="relative h-44 overflow-hidden">
           <img
             v-if="project.envelopePic"
             :src="project.envelopePic"
             :alt="project.title"
-            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div
-            v-else
-            class="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center"
-          >
-            <i class="fa-solid fa-box-open text-4xl text-white/80"></i>
+          <div v-else class="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+            <i class="fa-solid fa-code text-5xl text-white/20"></i>
           </div>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
+          
+          <div class="absolute bottom-4 left-4 flex items-center gap-1.5 text-white/90 text-[10px] font-bold">
+            <i class="fa-regular fa-clock"></i>
+            {{ project.niceDate }}
+          </div>
         </div>
 
         <!-- 内容区 -->
-        <div class="p-4">
-          <!-- 标题 -->
-          <h3
-            class="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2 line-clamp-1 group-hover:text-blue-500 transition-colors"
-            v-html="project.title"
-          ></h3>
-
-          <!-- 描述 -->
-          <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">
-            {{ project.desc || '暂无描述' }}
+        <div class="p-5 flex-1 flex flex-col">
+          <h4 class="text-base font-bold text-slate-800 dark:text-white leading-snug mb-3 line-clamp-1 group-hover:text-blue-500 transition-colors" v-html="project.title"></h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-6 leading-relaxed font-medium">
+            {{ project.desc || '发现这个精选项目的独特之处...' }}
           </p>
 
           <!-- 底部信息 -->
-          <div class="flex items-center justify-between text-xs text-slate-400">
-            <div class="flex items-center gap-2">
-              <div
-                class="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-medium"
-                :style="getAvatarStyle(project.author || '佚名')"
-              >
+          <div class="mt-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-xl flex items-center justify-center text-white text-[10px] font-black shadow-md" :style="getAvatarStyle(project.author || '佚名')">
                 {{ (project.author || '佚名').charAt(0).toUpperCase() }}
               </div>
-              <span class="truncate max-w-[100px]">{{ project.author || '佚名' }}</span>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ project.author || '佚名' }}</span>
+                <span class="text-[9px] text-slate-400 uppercase tracking-tighter">{{ project.chapterName }}</span>
+              </div>
             </div>
-            <span>{{ project.niceDate }}</span>
+            <button class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-400 group-hover:bg-blue-500 group-hover:text-white group-hover:rotate-45 transition-all duration-500 flex items-center justify-center shadow-sm">
+              <i class="fa-solid fa-plus text-xs"></i>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 空状态 -->
-    <div
-      v-if="!loading && projects.length === 0"
-      class="flex flex-col items-center justify-center py-20 text-slate-400"
-    >
-      <i class="fa-solid fa-box-open text-5xl mb-4"></i>
-      <p class="text-sm">暂无项目</p>
-    </div>
-
     <!-- 加载更多 -->
-    <div v-if="hasMore && projects.length > 0" class="flex justify-center mt-6">
+    <div v-if="hasMore && projects.length > 0" class="flex justify-center mt-12">
       <button
         @click="loadMore"
         :disabled="loadingMore"
-        class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="group relative px-10 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-black rounded-2xl shadow-xl hover:shadow-blue-500/20 transition-all duration-300 active:scale-95 disabled:opacity-50"
       >
-        <i :class="['fa-solid', loadingMore ? 'fa-spinner fa-spin' : 'fa-arrow-down']"></i>
-        {{ loadingMore ? '加载中...' : '加载更多' }}
+        <span class="relative z-10 flex items-center gap-3">
+          <i :class="['fa-solid', loadingMore ? 'fa-spinner fa-spin' : 'fa-arrow-down-long']"></i>
+          {{ loadingMore ? '正在加载' : '加载更多项目' }}
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
       </button>
     </div>
 
-    <!-- 没有更多 -->
-    <div v-else-if="projects.length > 0" class="flex items-center justify-center gap-4 mt-6 text-slate-400 text-sm">
-      <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-      <span>已经到底了</span>
-      <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-    </div>
-
-    <!-- 悬浮按钮 -->
+    <!-- 悬浮回到顶部 -->
     <Transition name="fade">
-      <div
+      <button
         v-if="showScrollButtons"
-        class="sticky bottom-4 flex justify-end z-50 mt-4"
+        @click="scrollToTop"
+        class="fixed bottom-8 right-10 w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-100 dark:border-slate-700 flex items-center justify-center text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-300 z-50"
       >
-        <div class="flex flex-col gap-2">
-          <button
-            @click="scrollToTop"
-            class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300"
-            title="回到顶部"
-          >
-            <i class="fa-solid fa-chevron-up"></i>
-          </button>
-          <button
-            @click="scrollToBottom"
-            class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300"
-            title="滚动到底部"
-          >
-            <i class="fa-solid fa-chevron-down"></i>
-          </button>
-        </div>
-      </div>
+        <i class="fa-solid fa-chevron-up"></i>
+      </button>
     </Transition>
   </div>
 </template>
@@ -178,169 +171,155 @@ const loadingMore = ref(false)
 const categories = ref<ProjectCategory[]>([])
 const projects = ref<Project[]>([])
 const currentCategoryId = ref<number>(0)
-const currentCategoryName = ref<string>('项目列表')
+const currentCategoryName = ref<string>('精选列表')
 const page = ref(0)
 const hasMore = ref(false)
 const showScrollButtons = ref(false)
 
-const SCROLL_THRESHOLD = 200
+// 按钮显示状态
+const showLeftBtn = ref(false)
+const showRightBtn = ref(true)
 
-const getScrollContainer = () => {
-  return document.querySelector('main') as HTMLElement
+// 拖拽与滚动逻辑
+const scrollContainer = ref<HTMLElement | null>(null)
+let isDown = false
+let startX = 0
+let scrollLeftPos = 0
+let hasMoved = false
+
+const updateBtnState = () => {
+  if (!scrollContainer.value) return
+  const { scrollLeft, scrollWidth, clientWidth } = scrollContainer.value
+  showLeftBtn.value = scrollLeft > 10
+  showRightBtn.value = scrollLeft < (scrollWidth - clientWidth - 10)
 }
+
+const scrollBy = (offset: number) => {
+  if (!scrollContainer.value) return
+  scrollContainer.value.scrollBy({ left: offset, behavior: 'smooth' })
+}
+
+const startDragging = (e: MouseEvent) => {
+  isDown = true
+  hasMoved = false
+  if (!scrollContainer.value) return
+  startX = e.pageX - scrollContainer.value.offsetLeft
+  scrollLeftPos = scrollContainer.value.scrollLeft
+}
+
+const stopDragging = () => {
+  isDown = false
+}
+
+const onDragging = (e: MouseEvent) => {
+  if (!isDown || !scrollContainer.value) return
+  e.preventDefault()
+  const x = e.pageX - scrollContainer.value.offsetLeft
+  const walk = (x - startX) * 2
+  if (Math.abs(walk) > 5) hasMoved = true
+  scrollContainer.value.scrollLeft = scrollLeftPos - walk
+}
+
+const onCategoryClick = (category: ProjectCategory) => {
+  if (hasMoved) return
+  selectCategory(category.id)
+}
+
+const selectCategory = (id: number) => {
+  if (id === currentCategoryId.value) return
+  currentCategoryId.value = id
+  const cat = categories.value.find(c => c.id === id)
+  if (cat) currentCategoryName.value = cat.name
+  page.value = 0
+  loading.value = true
+  loadProjects(0)
+}
+
+const SCROLL_THRESHOLD = 300
+const getScrollContainer = () => document.querySelector('main') as HTMLElement
 
 const handleScroll = () => {
   const container = getScrollContainer()
-  if (container) {
-    showScrollButtons.value = container.scrollTop > SCROLL_THRESHOLD
-  }
+  if (container) showScrollButtons.value = container.scrollTop > SCROLL_THRESHOLD
 }
 
 const scrollToTop = () => {
   const container = getScrollContainer()
-  if (container) {
-    container.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-}
-
-const scrollToBottom = () => {
-  const container = getScrollContainer()
-  if (container) {
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
-  }
+  if (container) container.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const fetchData = async () => {
   loadingCategories.value = true
   try {
-    const categoriesRes = await getProjectTree()
-    if (categoriesRes.data && categoriesRes.data.length > 0) {
-      categories.value = categoriesRes.data
-      currentCategoryId.value = categoriesRes.data[0].id
-      currentCategoryName.value = categoriesRes.data[0].name
+    const res = await getProjectTree()
+    if (res.data && res.data.length > 0) {
+      categories.value = res.data
+      currentCategoryId.value = res.data[0].id
+      currentCategoryName.value = res.data[0].name
       await loadProjects(0)
+      setTimeout(updateBtnState, 100)
     }
-  } catch (error) {
-    console.error('Failed to fetch data:', error)
+  } catch (e) {
+    console.error(e)
   } finally {
     loadingCategories.value = false
   }
 }
 
 const loadProjects = async (pageNum: number) => {
-  const res = await getProjects(pageNum, currentCategoryId.value)
-  if (res.data && res.data.datas) {
-    if (pageNum === 0) {
-      projects.value = res.data.datas
-    } else {
-      projects.value = [...projects.value, ...res.data.datas]
+  try {
+    const res = await getProjects(pageNum, currentCategoryId.value)
+    if (res.data && res.data.datas) {
+      if (pageNum === 0) projects.value = res.data.datas
+      else projects.value = [...projects.value, ...res.data.datas]
+      hasMore.value = !res.data.over
     }
-    hasMore.value = !res.data.over
-  } else {
-    hasMore.value = false
-  }
-}
-
-// 选择分类
-const selectCategory = (categoryId: number) => {
-  if (categoryId === currentCategoryId.value) return
-  currentCategoryId.value = categoryId
-  // 更新分类名称
-  const category = categories.value.find(c => c.id === categoryId)
-  if (category) {
-    currentCategoryName.value = category.name
-  }
-  page.value = 0
-  loading.value = true
-  loadProjects(0).then(() => {
+  } catch (e) {
+    console.error(e)
+  } finally {
     loading.value = false
-  }).catch(error => {
-    console.error('Failed to load category projects:', error)
-    loading.value = false
-  })
+  }
 }
 
 const loadMore = async () => {
   if (loadingMore.value || !hasMore.value) return
-
   loadingMore.value = true
   page.value++
-  try {
-    await loadProjects(page.value)
-  } catch (error) {
-    console.error('Failed to load more projects:', error)
-    page.value--
-  } finally {
-    loadingMore.value = false
-  }
+  try { await loadProjects(page.value) } 
+  catch (e) { page.value-- } 
+  finally { loadingMore.value = false }
 }
 
-const openProject = (project: Project) => {
-  openUrl(project.link, project.title)
-}
+const openProject = (p: Project) => openUrl(p.link, p.title)
 
-// 头像渐变色
-const avatarGradients = [
-  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-  'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-  'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-]
-
-// 根据作者名生成头像样式
-const getAvatarStyle = (name: string) => {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  const gradientIndex = Math.abs(hash) % avatarGradients.length
-  return {
-    background: avatarGradients[gradientIndex]
-  }
+const avatarGradients = ['linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)', 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)', 'linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%)']
+const getAvatarStyle = (n: string) => {
+  let h = 0
+  for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h)
+  return { background: avatarGradients[Math.abs(h) % avatarGradients.length] }
 }
 
 onMounted(() => {
   fetchData()
-  const container = getScrollContainer()
-  if (container) {
-    container.addEventListener('scroll', handleScroll)
-  }
+  const c = getScrollContainer()
+  if (c) c.addEventListener('scroll', handleScroll)
 })
 
 onUnmounted(() => {
-  const container = getScrollContainer()
-  if (container) {
-    container.removeEventListener('scroll', handleScroll)
-  }
+  const c = getScrollContainer()
+  if (c) c.removeEventListener('scroll', handleScroll)
 })
 </script>
 
 <style scoped>
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.projects-wrapper {
+  animation: slideUp 0.5s ease-out;
 }
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

@@ -1,99 +1,98 @@
 <template>
-  <div class="fade-in relative">
-    <!-- 标题 -->
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">
-        <i class="fa-solid fa-users mr-2 text-blue-500"></i>
-        广场
-      </h2>
-      <span class="text-xs text-slate-400">共 {{ articles.length }} 篇</span>
+  <div class="square-wrapper fade-in pb-12 px-2">
+    <!-- 头部：标题与介绍 -->
+    <div class="mb-10 px-1">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">广场</h2>
+      </div>
+      <p class="text-sm text-slate-400 ml-13 font-medium">开发者交流社区，分享心得，碰撞火花</p>
     </div>
 
     <!-- 加载中 -->
-    <div v-if="loading" class="flex justify-center py-10">
-      <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-500"></i>
+    <div v-if="loading && articles.length === 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-for="i in 6" :key="i" class="h-40 bg-white dark:bg-slate-800 rounded-2xl animate-pulse"></div>
     </div>
 
     <!-- 文章列表 -->
-    <div v-else-if="articles.length > 0" class="space-y-4">
-          <div
-            v-for="article in articles"
-            :key="article.id"
-            class="bg-white dark:bg-slate-900 p-5 rounded-2xl cursor-pointer hover:shadow-md transition-shadow"
-            @click="openArticle(article)"
-          >
-        <div class="flex justify-between items-start mb-2">
-          <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-2">
-            {{ article.title }}
-          </h3>
-          <i
-            :class="[
-              article.collect ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-slate-400',
-              'cursor-pointer ml-2 flex-shrink-0'
-            ]"
-          ></i>
+    <div v-else-if="articles.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        v-for="article in articles"
+        :key="article.id"
+        class="group relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:-translate-y-1.5 transition-all duration-500 cursor-pointer flex flex-col"
+        @click="openArticle(article)"
+      >
+        <!-- 侧边装饰：圆点指示 -->
+        <div class="absolute top-6 left-0 w-1 h-8 bg-indigo-500/20 group-hover:bg-indigo-500 rounded-r-full transition-all duration-500"></div>
+
+        <div class="flex justify-between items-start mb-3 pl-2">
+          <h3 class="text-base font-bold text-slate-800 dark:text-white leading-relaxed line-clamp-2 group-hover:text-indigo-500 transition-colors" v-html="article.title"></h3>
+          <button @click.stop="handleCollect(article)" class="p-2 -mt-1 -mr-1 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 group/heart transition-all">
+            <i :class="[article.collect ? 'fa-solid text-red-500' : 'fa-regular text-slate-300 group-hover/heart:text-red-400', 'fa-heart text-sm transition-transform group-active:scale-125']"></i>
+          </button>
         </div>
-        <p v-if="article.desc" class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-2">
+
+        <p v-if="article.desc" class="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed pl-2">
           {{ article.desc }}
         </p>
-        <div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-          <span>@{{ article.author || article.shareUser }}</span>
-          <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-600">{{ article.superChapterName }}</span>
-          <span class="ml-auto">{{ article.niceDate }}</span>
+
+        <div class="mt-auto flex items-center justify-between pl-2">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-7 h-7 rounded-xl flex items-center justify-center text-white text-[10px] font-black shadow-md shadow-indigo-500/10"
+              :style="getAvatarStyle(article.author || article.shareUser || '匿名')"
+            >
+              {{ (article.author || article.shareUser || 'A').charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-200">@{{ article.author || article.shareUser || '匿名' }}</span>
+              <span class="text-[9px] text-slate-400 uppercase tracking-widest">{{ article.superChapterName }}</span>
+            </div>
+          </div>
+          <span class="text-[10px] font-medium text-slate-400">{{ article.niceDate }}</span>
         </div>
       </div>
     </div>
 
     <!-- 空状态 -->
-    <div v-else class="flex flex-col items-center justify-center py-20 text-slate-400">
-      <i class="fa-solid fa-inbox text-4xl mb-3"></i>
-      <p>暂无内容</p>
+    <div v-else class="flex flex-col items-center justify-center py-32">
+      <div class="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-6 text-slate-200">
+        <i class="fa-solid fa-box-open text-4xl"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-400 tracking-tight">广场暂时空空如也</h3>
     </div>
 
     <!-- 加载更多 -->
-    <div v-if="articles.length > 0 && !isLastPage" class="flex justify-center mt-6">
+    <div v-if="articles.length > 0 && !isLastPage" class="flex justify-center mt-12">
       <button
         @click="loadMore"
         :disabled="loadingMore"
-        class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="group relative px-12 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-black rounded-2xl shadow-xl hover:shadow-indigo-500/20 transition-all duration-300 active:scale-95 disabled:opacity-50 overflow-hidden"
       >
-        <i :class="['fa-solid', loadingMore ? 'fa-spinner fa-spin' : 'fa-arrow-down']"></i>
-        {{ loadingMore ? '加载中...' : '加载更多' }}
+        <span class="relative z-10 flex items-center gap-3">
+          <i :class="['fa-solid', loadingMore ? 'fa-spinner fa-spin' : 'fa-rocket']"></i>
+          {{ loadingMore ? '正在为您加载' : '探索更多分享' }}
+        </span>
+        <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
       </button>
     </div>
 
-    <!-- 没有更多 -->
-    <div v-else-if="articles.length > 0" class="flex items-center justify-center gap-4 mt-6 text-slate-400 text-sm">
-      <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
-      <span>已经到底了</span>
-      <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+    <!-- 底部：到底了 -->
+    <div v-else-if="articles.length > 0" class="text-center py-12">
+      <p class="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.2em]">End of Square</p>
     </div>
 
-    <!-- 悬浮按钮 -->
+    <!-- 悬浮回到顶部 -->
     <Transition name="fade">
-      <div
+      <button
         v-if="showScrollButtons"
-        class="sticky bottom-4 flex justify-end z-50 mt-4"
+        @click="scrollToTop"
+        class="fixed bottom-8 right-10 w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-100 dark:border-slate-700 flex items-center justify-center text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all duration-300 z-50 shadow-indigo-500/10"
       >
-        <div class="flex flex-col gap-2">
-          <!-- 回到顶部 -->
-          <button
-            @click="scrollToTop"
-            class="square-scroll-btn w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300"
-            title="回到顶部"
-          >
-            <i class="fa-solid fa-chevron-up"></i>
-          </button>
-          <!-- 滚动到底部 -->
-          <button
-            @click="scrollToBottom"
-            class="square-scroll-btn w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300"
-            title="滚动到底部"
-          >
-            <i class="fa-solid fa-chevron-down"></i>
-          </button>
-        </div>
-      </div>
+        <i class="fa-solid fa-chevron-up"></i>
+      </button>
     </Transition>
   </div>
 </template>
@@ -101,8 +100,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { getSquareList } from '@/api/square'
+import { collectArticle, uncollectArticle } from '@/api/user'
 import type { Article } from '@/types/api'
 import { openUrl } from '@/utils/url'
+import { checkIsLoggedIn } from '@/api/user'
 
 const articles = ref<Article[]>([])
 const loading = ref(false)
@@ -112,45 +113,25 @@ const isLastPage = ref(false)
 
 // 滚动相关
 const showScrollButtons = ref(false)
-const SCROLL_THRESHOLD = 200
+const SCROLL_THRESHOLD = 300
 
 // 获取滚动容器
-const getScrollContainer = () => {
-  return document.querySelector('main') as HTMLElement
-}
+const getScrollContainer = () => document.querySelector('main') as HTMLElement
 
 const handleScroll = () => {
   const container = getScrollContainer()
-  if (container) {
-    showScrollButtons.value = container.scrollTop > SCROLL_THRESHOLD
-  }
+  if (container) showScrollButtons.value = container.scrollTop > SCROLL_THRESHOLD
 }
 
 const scrollToTop = () => {
   const container = getScrollContainer()
-  if (container) {
-    container.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    })
-  }
-}
-
-const scrollToBottom = () => {
-  const container = getScrollContainer()
-  if (container) {
-    container.scrollTo({
-      top: container.scrollHeight,
-      behavior: 'smooth'
-    })
-  }
+  if (container) container.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // 获取文章列表
 async function fetchArticles(isLoadMore = false) {
-  if (isLoadMore) {
-    loadingMore.value = true
-  } else {
+  if (isLoadMore) loadingMore.value = true
+  else {
     loading.value = true
     articles.value = []
     currentPage.value = 0
@@ -159,11 +140,8 @@ async function fetchArticles(isLoadMore = false) {
   try {
     const res = await getSquareList(currentPage.value)
     if (res.errorCode === 0) {
-      if (isLoadMore) {
-        articles.value.push(...res.data.datas)
-      } else {
-        articles.value = res.data.datas
-      }
+      if (isLoadMore) articles.value.push(...res.data.datas)
+      else articles.value = res.data.datas
       isLastPage.value = res.data.over
     }
   } catch (error) {
@@ -174,50 +152,58 @@ async function fetchArticles(isLoadMore = false) {
   }
 }
 
-// 加载更多
 function loadMore() {
   currentPage.value++
   fetchArticles(true)
 }
 
-// 打开文章链接
-const openArticle = (article: Article) => {
-  openUrl(article.link, article.title)
+const handleCollect = async (article: Article) => {
+  if (!checkIsLoggedIn()) {
+    alert('请先登录')
+    return
+  }
+  try {
+    if (article.collect) {
+      await uncollectArticle(article.id)
+      article.collect = false
+    } else {
+      await collectArticle(article.id)
+      article.collect = true
+    }
+  } catch (e) { alert('操作失败') }
+}
+
+const openArticle = (article: Article) => openUrl(article.link, article.title)
+
+const avatarGradients = [
+  'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+  'linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%)',
+  'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+  'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)'
+]
+
+const getAvatarStyle = (name: string) => {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h)
+  return { background: avatarGradients[Math.abs(h) % avatarGradients.length] }
 }
 
 onMounted(() => {
   fetchArticles()
   const container = getScrollContainer()
-  if (container) {
-    container.addEventListener('scroll', handleScroll)
-  }
+  if (container) container.addEventListener('scroll', handleScroll)
 })
 
 onUnmounted(() => {
   const container = getScrollContainer()
-  if (container) {
-    container.removeEventListener('scroll', handleScroll)
-  }
+  if (container) container.removeEventListener('scroll', handleScroll)
 })
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>
-
-<style>
-/* 强制覆盖广场页面悬浮按钮样式 */
-.square-scroll-btn:hover {
-  background-color: #3b82f6 !important;
-  color: white !important;
-  border-color: #3b82f6 !important;
+.square-wrapper { animation: slideUp 0.5s ease-out; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

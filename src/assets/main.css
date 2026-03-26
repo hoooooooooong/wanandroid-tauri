@@ -2,8 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 禁止过渡动画时的元素默认过渡，防止截图截到过渡中的状态 */
+.switching-theme,
+.switching-theme * {
+  transition: none !important;
+}
+
+/* --- View Transition --- */
+:root {
+  --view-transition-old-zindex: 9999;
+  --view-transition-new-zindex: 1;
+}
+
+:root.dark {
+  --view-transition-old-zindex: 1;
+  --view-transition-new-zindex: 9999;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  display: block;
+  /* 强制不透明，防止淡入淡出闪烁 */
+  opacity: 1;
+  /* 确保覆盖全屏 */
+  height: 100%;
+  width: 100%;
+}
+
+/* 确保伪元素覆盖全屏且不产生溢出 */
+::view-transition-image-pair(root) {
+  isolation: isolate;
+  background-color: white; /* 默认亮色背景 */
+}
+
+.dark::view-transition-image-pair(root) {
+  background-color: #0f172a; /* 暗色背景 */
+}
+
+::view-transition-old(root) {
+  z-index: var(--view-transition-old-zindex);
+}
+::view-transition-new(root) {
+  z-index: var(--view-transition-new-zindex);
+}
+
 :root {
   --primary-blue: #3b82f6;
+  --x: 0%;
+  --y: 100%;
 }
 
 /* 滚动条样式 */
