@@ -9,6 +9,7 @@
 </div>
 
 
+
 ## ✨ 特性
 
 ### 功能完备
@@ -37,8 +38,8 @@
 ### 主题切换
 <div align="center">
   <p align="center">
-    <img src="IMG/首页.png" width="45%" alt="亮色模式" />
-    <img src="IMG/黑暗主题.png" width="45%" alt="深色模式" />
+    <img src="IMG/浅色主题.gif" width="45%" alt="亮色模式" />
+    <img src="IMG/深色主题.gif" width="45%" alt="深色模式" />
   </p>
   <p><em>(界面支持根据系统主题自动切换深色/浅色)</em></p>
 </div>
